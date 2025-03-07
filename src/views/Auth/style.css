@@ -18,11 +18,34 @@
 
   display: flex;
   align-items: center;
+  justify-content: center;          
 
-  box-sizing: border-box;
+  box-sizing: border-bogit x;
   padding-left: 100px;
   padding-right: 130px;
   min-width: 610px;
+}
 
-  background-color: aquamarine;
+#auth-login-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+
+  width: 380px;
+}
+
+#auth-login-container .header {
+  color: var(--Lightmode-Grey);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 173%;
+}
+
+#auth-login-container .input-container {
+  align-self: stretch; /*교차점(align)은 나. 내가 있는 공간 한 줄 전체를 차지하게 하는*/
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
