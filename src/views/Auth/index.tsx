@@ -22,8 +22,9 @@ export default function Auth() {
     <div id='auth-wrapper'>
       <div className='auth-side-image'></div>
       <div className='auth-box'>
-        {page === 'sign-in' ? <SignIn onPageChange={onPageChangeHandler} /> : 
-        <SignUp onPageChange={onPageChangeHandler}/>
+        {page === 'sign-in' ? 
+        <SignIn onPageChange={onPageChangeHandler} /> : 
+        <SignUp onPageChange={onPageChangeHandler} />
         }
       </div>
     </div>
