@@ -6,7 +6,6 @@ import Layout from './layouts/Layout';
 import Auth from './views/Auth';
 
 // Router 구성
-
 // - /auth : 로그인 및 회원가입 페이지
 
 // - /main : 메인 페이지
@@ -48,11 +47,9 @@ function App() {
             <Route path={'update'} element={<>일기 수정 페이지</>} />
           </Route>
         </Route>
-      </Route>
-
       
-
-      <Route path={'*'} element={<>404 페이지</>} />
+        <Route path={'*'} element={<>404 페이지</>} />
+      </Route>
     </Routes>
   );
 }
