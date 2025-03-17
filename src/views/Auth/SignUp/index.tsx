@@ -4,8 +4,8 @@ import { Address, useDaumPostcodePopup } from 'react-daum-postcode';
 import './style.css';
 import { AuthPage } from 'src/types/aliases';
 import InputBox from 'src/components/InputBox';
-import { idCheckRequest } from 'src/apis';
-import { IdCheckRequestDto } from 'src/apis/dto/request/auth';
+import { idCheckRequest, signUpRequest } from 'src/apis';
+import { IdCheckRequestDto, SignUpRequestDto } from 'src/apis/dto/request/auth';
 import { ResponseDto } from 'src/apis/dto/response';
 
 // interface: 회원가입 컴포넌트 속성 //
@@ -88,6 +88,28 @@ export default function SignUp(props: Props) {
     setUserIdChecked(isSuccess);
   };
 
+  // function: sign up response 처리 함수 //
+  const signUpResponse = (responseBody: ResponseDto | null) => {
+    const message = 
+      !responseBody ? '서버에 문제가 있습니다' :
+      responseBody.code === 'DBE' ? '서버에 문제가 있습니다' :
+      responseBody.code === 'EU' ? '이미 사용중인 아이디입니다' :
+      responseBody.code === 'VF' ? '모두 입력해주세요' : '';
+
+    const isSuccess = responseBody !== null && responseBody.code === 'SU';
+    if (!isSuccess) {
+      if (responseBody && responseBody.code === 'EU') {
+        setUserIdMessage(message);
+        setUserIdMessageError(true);
+        return;  
+      }
+      alert(message);
+      return;
+    }
+
+    onPageChange('sign-in');
+  };
+
   // event handler: 사용자 이름 변경 이벤트 처리 //
   const onUserNameChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -160,7 +182,11 @@ export default function SignUp(props: Props) {
     }
     if (!issignUpButtonActive) return;
 
-    alert('회원가입!');
+    const requestBody: SignUpRequestDto = {
+      userId, userPassword, name: userName, 
+      address: userAddress, detailAddress: userDetailAddress, joinType: 'NORMAL'
+    };
+    signUpRequest(requestBody).then(signUpResponse);
   };
 
   // effect: 사용자 비밀번호 또는 사용자 비밀번호 확인이 변경될 시 실행할 함수 //
