@@ -3,13 +3,13 @@
   flex-direction: column;
   gap: 30px;
 
-  margin: 0 auto; /*가운데로 오게 하는*/
+  margin: 0 auto;
   width: 1180px;
 }
 
 #diary-main-wrapper .jumbotron {
   display: flex;
-  justify-content: center; /*중앙정렬*/
+  justify-content: center;
 
   border-radius: 10px;
   padding: 40px 0;
@@ -56,7 +56,7 @@
 #diary-main-wrapper .diary-list-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap:24px;
 }
 
 #diary-main-wrapper .diary-list-table {
@@ -67,8 +67,8 @@
 .diary-list-table>.tr {
   display: flex;
   box-sizing: border-box;
-  height: 50px;
   border-bottom: 1px solid var(--Lightmode-Grey3);
+  height: 50px;
 
   cursor: pointer;
 }
@@ -89,8 +89,8 @@
 
   box-sizing: border-box;
   border-right: 1px solid var(--Lightmode-Grey3);
-  
   width: 192px;
+
   color: var(--Lightmode-Grey);
   font-size: 16px;
   font-weight: 700;
@@ -113,12 +113,24 @@
 
   flex: 1;
   justify-content: start;
-  
+
   box-sizing: border-box;
   padding: 0 60px;
-  
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
   line-height: 50px;
+}
+
+.diary-list-table .td .feeling-box {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#diary-main-wrapper .pagination-container {
+  display: flex;
+  justify-content: center;
 }

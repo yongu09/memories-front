@@ -1,74 +1,107 @@
 import React, { useEffect, useState } from 'react'
 import './style.css'
 import { useNavigate } from 'react-router';
-import { DIARY_WRITE_ABSOLUTE_PATH } from 'src/constants';
+import { ACCESS_TOKEN, DIARY_VIEW_ABSOLUTE_PATH, DIARY_WRITE_ABSOLUTE_PATH } from 'src/constants';
 import { Diary } from 'src/types/interfaces';
+import { usePagination } from 'src/hooks';
+import Pagination from 'src/components/Pagination';
+import { getDiaryRequest, getMyDiaryRequest } from 'src/apis';
+import { useCookies } from 'react-cookie';
+import { GetMyDiaryResponseDto } from 'src/apis/dto/response/diary';
+import { ResponseDto } from 'src/apis/dto/response';
 
 // variable: 점보트론 컨텐츠 //
 const JUMBOTRON_CONTENT = '일기 작성은 하루의 사건, 감정, 생각을 기록하여 단기 기억 능력 향상에 도움을 주며,\n장기 기억으로 변환하는데 도움을 줍니다.\n\n일기를 쓰는 행위 자체가 주의를 기울이는 활동이므로 주의력 및\n집중력 향상에 도움을 줍니다.\n\n일기 작성을 통해 단어를 떠올리고 문장을 조작하는 능력을 지속적으로\n연습하여 언어 능력 유지에 도움을 줍니다.';
 
+// interface: 일기 테이블 레코드 컴포넌트 속성 //
+interface TableItemProps {
+  diary: Diary;
+}
+
 // component: 일기 테이블 레코드 컴포넌트 //
-function TableItem() {
+function TableItem({ diary }: TableItemProps) {
+
+  const { diaryNumber, writeDate, title, weather, feeling } = diary;
+
+  // variable: 기분 아이콘 클래스 //
+  const feelingIconClass = `feeling-icon ${
+    feeling === '보통' ? 'normal' :
+    feeling === '행복' ? 'happy' :
+    feeling === '즐거움' ? 'funny' : 
+    feeling === '슬픔' ? 'sad' : 
+    feeling === '분노' ? 'angry' : ''
+  }`
+
+  //function: 네비게이터 함수 //
+  const navigator = useNavigate();
+
+  // event handler: 레코드 클릭 이벤트 처리 //
+  const onClick = () => {
+    navigator(DIARY_VIEW_ABSOLUTE_PATH(diaryNumber));
+  };
 
   // render: 일기 테이블 레코드 컴포넌트 렌더링 //
   return (
-  <div className='tr'>
-    <div className='td'>2025-03-19</div>
-    <div className='td title'>내가 그린 기린 그림은 잘 그린 기린 그림이고 네가 그린 기린 그림은 잘 못그린 기린 그림이다. 안녕하세요. 잘가세요.</div>
-    <div className='td'>맑음</div>
-    <div className='td'>행복</div>
-  </div>
+    <div className='tr' onClick={onClick}>
+      <div className='td'>{writeDate}</div>
+      <div className='td title'>{title}</div>
+      <div className='td'>{weather}</div>
+      <div className='td'>
+        <div className='feeling-box'>
+          <div className={feelingIconClass}></div>
+          <div className='feeling-text'>{feeling}</div>
+        </div>
+      </div>
+    </div>
   )
 }
 
 // component: 일기 메인 화면 컴포넌트 //
 export default function DiaryMain() {
 
-  const [totalList, setTotalList] = useState<Diary[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [totalPage, setTotalPage] = useState<number>(0);
-  const [totalSection, setTotalSection] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const [viewList, setViewList] = useState<Diary[]>([]);
+  // state: cookie 상태 //
+  const [cookies] = useCookies();
 
-  // function: 전체 리스트 변경되는 함수 //
-  const init = (totalList: Diary[]) => {
-    const totalCount = totalList.length;
-    setTotalCount(totalCount);
-    const totalPage = Math.ceil(totalCount / 10);
-    setTotalPage(totalPage);
-    const totalSection = Math.ceil(totalPage / 10);
-    setTotalSection(totalSection);
+  // state: 페이지네이션 상태 //
+  const { 
+    currentPage, setCurrentPage, currentSection, setCurrentSection,
+    totalSection, setTotalList, viewList, pageList
+  } = usePagination<Diary>();
 
-    setCurrentPage(1);
-  };
-
-  // function: 뷰 리스트 변경되는 함수 //
-  const initViewList = (totalList: Diary[]) => {
-    const totalCount = totalList.length;
-    const startIndex = (currentPage - 1) * 10;
-    const endIndex = totalCount * 10 > totalCount ? totalCount : totalCount * 10;
-    const viewList: Diary[] = totalList.slice(startIndex, endIndex);
-    setViewList(viewList);
-  };
-
-  // effect: 전체 리스트가 변경되면 실행할 함수 //
-  useEffect(() => {
-    if (totalList.length) init(totalList);
-  }, [totalList]);
-
-  // effect: 현재 페이지가 변경되면 실행할 함수 //
-  useEffect(() => {
-    if (currentPage) initViewList(totalList);
-  },[currentPage]);
+  // variable: access token //
+  const accessToken = cookies[ACCESS_TOKEN];
 
   // function: 네비게이터 함수 //
   const navigator = useNavigate();
-  
+
+  // function: get my diary response 처리 함수 //
+  const getMyDiaryResponse = (responseBody: GetMyDiaryResponseDto | ResponseDto | null) => {
+    const message = 
+      !responseBody ? '서버에 문제가 있습니다.' :
+      responseBody.code === 'DBE' ? '서버에 문제가 있습니다.' :
+      responseBody.code === 'AF' ? '인증에 실패했습니다.' : '';
+
+    const isSuccess = responseBody !== null && responseBody.code === 'SU';
+    if (!isSuccess) {
+      alert(message);
+      return;
+    }
+
+    const { diaries } = responseBody as GetMyDiaryResponseDto;
+    setTotalList(diaries);
+
+  };
+
   // event handler: 작성하기 버튼 클릭 이벤트 처리 //
   const onWriteButtonClickHandler = () => {
     navigator(DIARY_WRITE_ABSOLUTE_PATH);
   };
+
+  // effect: 컴포넌트 로드 시 실행할 함수 //
+  useEffect(() => {
+    if (!accessToken) return;
+    getMyDiaryRequest(accessToken).then(getMyDiaryResponse);
+  }, []);
 
   // render: 일기 메인 화면 컴포넌트 렌더링 //
   return (
@@ -92,21 +125,20 @@ export default function DiaryMain() {
             <div className='th'>날씨</div>
             <div className='th'>기분</div>
           </div>
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
-          <TableItem />
+          {viewList.map((diary, index) => <TableItem key={index} diary={diary} />)}
         </div>
-        <div className='pagination-container'></div>
+        <div className='pagination-container'>
+          {totalSection !== 0 &&
+          <Pagination 
+            currentPage={currentPage}
+            currentSection={currentSection}
+            totalSection={totalSection}
+            pageList={pageList}
+            setCurrentPage={setCurrentPage}
+            setCurrentSection={setCurrentSection}
+          />
+          }
+        </div>
       </div>
     </div>
   )

@@ -25,7 +25,7 @@ const PATCH_DIARY_URL = (diaryNumber: number | string) => `${DIARY_MODULE_URL}/$
 const DELETE_DIARY_URL = (diaryNumber: number | string) => `${DIARY_MODULE_URL}/${diaryNumber}`;
 
 // function: Authorization Bearer 헤더 //
-const bearerAuthorization = (accessToken: string) => ({ headers:{ 'Authhorization': `Bearer ${accessToken}` } })
+const bearerAuthorization = (accessToken: string) => ({ headers:{ 'Authorization': `Bearer ${accessToken}` } })
 
 // function: response 성공 처리 함수 //
 const responseSuccessHandler = <T = ResponseDto>(response: AxiosResponse<T>) => {
