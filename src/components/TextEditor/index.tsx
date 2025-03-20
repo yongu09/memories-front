@@ -75,17 +75,14 @@ function MenuBar({ editor }: MenuBarProp) {
 // variable: tiptap Text Editor 확장 //
 const extensions = [
   Color.configure({ types: [TextStyle.name, ListItem.name] }),
-  Placeholder.configure({
-    placeholder: '내용을 입력하세요'
-  }),
   StarterKit.configure({
     bulletList: {
       keepMarks: true,
-      keepAttributes: false,
+      keepAttributes: false, 
     },
     orderedList: {
       keepMarks: true,
-      keepAttributes: false,
+      keepAttributes: false, 
     },
   }),
 ]
