@@ -138,9 +138,9 @@ export default function MemoryTest() {
     }
   }, [memoryCards]);
 
-  // effect: 종료 상태가 변경되로 시 실행할 함수 //
+  // effect: 종료 상태가 변경될 시 실행할 함수 //
   useEffect(() => {
-    if (!isFinish || accessToken) return;  
+    if (!isFinish || !accessToken) return;  
     const requestBody: PostMemoryRequestDto = {
       measurementTime
     };
