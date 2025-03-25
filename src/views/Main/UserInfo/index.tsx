@@ -1,11 +1,27 @@
-import React, { ChangeEvent, useState } from 'react'
+import React, { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { useSignInUserStore } from 'src/stores';
 import DefaultProfile from 'src/assets/images/default-profile.png';
 import Modal from 'src/components/Modal';
 import InputBox from 'src/components/InputBox';
+import { Address, useDaumPostcodePopup } from 'react-daum-postcode';
+import { fileUploadRequest, patchUserRequest } from 'src/apis';
+import { PatchUserRequestDto } from 'src/apis/dto/request/user';
+import { useCookies } from 'react-cookie';
+import { ACCESS_TOKEN } from 'src/constants';
+import { ResponseDto } from 'src/apis/dto/response';
+import { useSignInUser } from 'src/hooks';
 
 // component: 로그인 사용자 정보 수정 컴포넌트 //
 function UserUpdate() {
+
+  // state: cookie 상태 //
+  const [cookies] = useCookies();
+  
+  // state: 로그인 사용자 정보 //
+  const { profileImage, name, gender, age, address, detailAddress } = useSignInUserStore();
+
+  // state: 파일 인풋 참조 상태 //
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   // state: 프로필 이미지 미리보기 상태 //
   const [previewProfile, setPreviewProfile] = useState<String | null>(null);
@@ -22,8 +38,64 @@ function UserUpdate() {
   // state: 사용자 프로필 이미지 상태 //
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
+  // variable: access token //
+  const accessToken = cookies[ACCESS_TOKEN];
+
   // variable: 프로푈 이미지 스타일//
   const profileImageStyle = { cursor: 'pointer', backgroundImage: `url(${previewProfile ? previewProfile : DefaultProfile})` };
+  // variable: 남성 클래스 //
+  const manClass = updateGender === 'man' ? 'check-item active' : 'check-item';
+  // variable: 남성 클래스 //
+  const womanClass = updateGender === 'woman' ? 'check-item active' : 'check-item';
+
+  // function: 로그인 유저 정보 불러오기 함수 //
+  const getSignInUser = useSignInUser();
+
+  // function: 다음 포스트 코드 팝업 오픈 함수 //
+  const open = useDaumPostcodePopup();
+
+  // function: 다음 포스트 코드 완료 처리 함수//
+  const daumPostCompleteHandler = (data: Address) => {
+    const { address } = data;
+    setUpdateAddress(address);
+  };
+
+  // function: patch user response 처리 함수 //
+  const patchUserResponse = (responseBody: ResponseDto | null) => {
+    const message = 
+      !responseBody ? '서버에 문제가 있습니다.' :
+      responseBody.code === 'DBE' ? '서버에 문제가 있습니다.' :
+      responseBody.code === 'AF' ? '인증에 실패했습니다.' : '';
+
+    const isSuccess = responseBody !== null && responseBody.code === 'SU';
+    if (!isSuccess) {
+      alert(message);
+      return;
+    }
+
+    getSignInUser();
+  };
+
+  // event handler: 프로필 사진 클릭 이벤트 처리 //
+  const onProfileClickHandler = () => {
+    if (!fileRef.current) return;
+    fileRef.current.click();
+  };
+
+  // event handler: 파일 인풋 변경 이벤트 처리 //
+  const onFileChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
+    const { files } = event.target;
+    if (!files || !files.length) return;
+
+    const file = files[0];
+    setProfileImageFile(file);
+
+    const fileReader = new FileReader();
+    fileReader.readAsDataURL(file);
+    fileReader.onloadend = () => {
+      setPreviewProfile(fileReader.result as string);
+    };
+  };
   
   // event handler: 사용자 이름 변경 이벤트 처리 //
   const onNameChangeHhandler = (event: ChangeEvent<HTMLInputElement>) => {
@@ -32,14 +104,22 @@ function UserUpdate() {
   };
 
   // event handler: 사용자 성별 변경 이벤트 처리 //
-  const onGenderChangeHhandler = () => {
-
+  const onGenderChangeHhandler = (gender: string) => {
+    setUpdateGender(gender);
   };
 
   // event handler: 사용자 나이 변경 이벤트 처리 //
   const onAgeChangeHhandler = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
+    const regexp = /^$|^[1-9][0-9]*$/;
+    const isNumber = regexp.test(value);
+    if (!isNumber) return;
     setUpdateAge(value);
+  };
+
+  // event handler: 주소 검색 버튼 클릭 이벤트 처리 //
+  const onSearchAddressClickHandler = () => {
+    open({ onComplete: daumPostCompleteHandler });
   };
 
   // event handler: 사용자 상세 주소 변경 이벤트 처리 //
@@ -48,18 +128,72 @@ function UserUpdate() {
     setUpdateDetailAddress(value);
   };
 
+  // event handler: 수정 버튼 클릭 이벤트 처리 //
+  const onUpdateButtonClick = async () => {
+    const message = 
+      !updateName ? '이름을 입력하세요.' :
+      !updateAge ? '나이를 입력하세요.' : 
+      !updateGender ? '성별을 선택하세요.' :
+      !updateAddress ? '주소를 입력하세요.' : '';
+    const isCheck = updateName && updateAge && updateGender && updateAddress;
+    if (!isCheck) {
+      alert(message);
+      return;
+    }
+
+    let profileImage: string | null = null; 
+    if (profileImageFile) {
+      const formData = new FormData();
+      formData.append('file', profileImageFile);
+      profileImage = await fileUploadRequest(formData);
+    }
+
+    const requestBody: PatchUserRequestDto = {
+      name: updateName, 
+      profileImage, 
+      address: updateAddress, 
+      detailAddress: updateDetailAddress, 
+      gender: updateGender, 
+      age: updateAge ? Number(updateAge) : null
+    };
+
+    patchUserRequest(requestBody, accessToken).then(patchUserResponse);
+
+  };
+
+  // effect: 컴포넌트 로드 시 실행할 함수 //
+  useEffect(() => {
+    setPreviewProfile(profileImage);
+    setUpdateName(name);
+    setUpdateGender(gender ? gender : '');
+    setUpdateAge(age ? String(age) : '');
+    setUpdateAddress(address);
+    setUpdateDetailAddress(detailAddress ? detailAddress : '');
+  }, []);
+
   // render: 로그인 사용자 정보 수정 렌더링 //
   return (
     <div className='user-update-container'>
       <div className='profile-image-box'>
-        <div className='profile-image' style={profileImageStyle} />
+        <div className='profile-image' style={profileImageStyle} onClick={onProfileClickHandler} />
+        <input ref={fileRef} style={{display: 'none'}} type='file' accept='image/png, image/jpeg' onChange={onFileChangeHandler} />
       </div>
       <InputBox label='이름' value={updateName} placeholder='이름을 입력해주세요' type='text' message='' onChange={onNameChangeHhandler} />
 
+      <div className='check-box'>
+        <div className='label'>성별</div>
+        <div className='check-item-box'>
+          <div className={manClass} onClick={() => onGenderChangeHhandler('man')}>남성</div>
+          <div className={womanClass} onClick={() => onGenderChangeHhandler('woman')}>여성</div>
+        </div>
+      </div>
+
       <InputBox label='나이' value={updateAge} placeholder='나이를 입력해주세요' type='text' message='' onChange={onAgeChangeHhandler} />
 
+      <InputBox label='주소' value={updateAddress} placeholder='주소를 입력해주세요' type='text' message='' onChange={() => {}} readOnly isButtonActive buttonName='주소 검색' onButtonClick={onSearchAddressClickHandler} />
+
       <InputBox label='상세 주소' value={updateDetailAddress} placeholder='상세 주소를 입력해주세요' type='text' message='' onChange={onDetailAddressChangeHhandler} />
-      <div className='button primary fullwidth'>수정</div>
+      <div className='button primary fullwidth' onClick={onUpdateButtonClick}>수정</div>
     </div>
   )
 }
