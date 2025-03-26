@@ -213,7 +213,7 @@ export default function UserInfo() {
   const { name, age, gender, address, detailAddress, profileImage } = useSignInUserStore();
 
   // state: 수정 모달 오픈 상태 //
-  const [isUpdateOpen, setUpdateOpen] = useState<boolean>(true);
+  const [isUpdateOpen, setUpdateOpen] = useState<boolean>(false);
 
   // variable: 프로필 이미지 스타일 //
   const profileImageStyle = { backgroundImage: `url(${profileImage ? profileImage : DefaultProfile})` };
