@@ -8,8 +8,9 @@ import { GetDiaryResponseDto, GetMyDiaryResponseDto } from "./dto/response/diary
 import { GetSignInUserResponseDto } from "./dto/response/user";
 import { PostConcentrationRequestDto, PostMemoryRequestDto } from "./dto/request/test";
 import { GetConcentrationResponseDto, GetMemoryResponseDto, GetRecentlyConcentrationResponseDto, GetRecentlyMemoryResponseDto } from "./dto/response/test";
-import { accessSync } from "fs";
 import { PatchUserRequestDto } from "./dto/request/user";
+import { GetWayResponseDto } from "./dto/response/openai";
+import { GetWayRequestBodyDto } from "./dto/request/openai";
 
 // variable: URL 상수 //
 const API_DOMAIN = process.env.REACT_APP_API_DOMAIN;
@@ -42,6 +43,10 @@ const GET_MEMORY_URL = `${TEST_MODULE_URL}/memory`;
 const GET_CONCENTRATION_URL = `${TEST_MODULE_URL}/concentration`;
 const GET_RECENTLY_MEMORY_URL = `${TEST_MODULE_URL}/memory/recently`;
 const GET_RECENTLY_CONCENTRATION_URL = `${TEST_MODULE_URL}/concentration/recently`;
+
+const OPEN_AI_MODULE_URL = `${API_DOMAIN}/api/v1/open-ai`;
+
+const GET_WAY_URL = `${OPEN_AI_MODULE_URL}/way`;
 
 const FILE_UPLOAD_URL = `${API_DOMAIN}/file/upload`;
 
@@ -188,6 +193,14 @@ export const getRecentlyMemoryRequest = async (accessToken: string) => {
 export const getRecentlyConcentrationRequest = async (accessToken: string) => {
   const responseBody = await axios.get(GET_RECENTLY_CONCENTRATION_URL, bearerAuthorization(accessToken))
     .then(responseSuccessHandler<GetRecentlyConcentrationResponseDto>)
+    .catch(responseErrorHandler);
+  return responseBody;
+};
+
+// function: get way 요청 함수 //
+export const getWayRequest = async (requestBody: GetWayRequestBodyDto, accessToken: string) => {
+  const responseBody = await axios.post(GET_WAY_URL, requestBody, bearerAuthorization(accessToken))
+    .then(responseSuccessHandler<GetWayResponseDto>)
     .catch(responseErrorHandler);
   return responseBody;
 };
